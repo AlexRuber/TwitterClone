@@ -10,8 +10,11 @@ import UIKit
 
 class TimelineViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     
+    // Variables
     var tweets: [Tweet] = []
-    
+    var refresher: UIRefreshControl!
+
+    // Outlets
     @IBOutlet weak var tableView: UITableView!
     
     override func viewDidLoad() {
@@ -20,8 +23,14 @@ class TimelineViewController: UIViewController, UITableViewDelegate, UITableView
         tableView.dataSource = self
         tableView.delegate = self
         
-        tableView.rowHeight = UITableViewAutomaticDimension
-        tableView.estimatedRowHeight = 100
+        tableView.estimatedRowHeight = 165
+        
+        // Refresher
+        refresher = UIRefreshControl()
+        refresher.attributedTitle = NSAttributedString(string: "New tweets coming!")
+        refresher.addTarget(self, action: #selector(TimelineViewController.didPullToRefresh), for: UIControlEvents.valueChanged)
+        tableView.insertSubview(refresher, at: 0)
+        
         
         APIManager.shared.getHomeTimeLine { (tweets, error) in
             if let tweets = tweets {
@@ -31,6 +40,19 @@ class TimelineViewController: UIViewController, UITableViewDelegate, UITableView
                 print("Error getting home timeline: " + error.localizedDescription)
             }
         }
+    }
+    
+    @objc func didPullToRefresh() {
+        // Change this to a fetch new individual posts call to API
+        APIManager.shared.getHomeTimeLine { (tweets, error) in
+            if let tweets = tweets {
+                self.tweets = tweets
+                self.tableView.reloadData()
+            } else if let error = error {
+                print("Error getting home timeline: " + error.localizedDescription)
+            }
+        }
+        refresher.endRefreshing()
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
